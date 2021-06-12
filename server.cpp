@@ -6,20 +6,45 @@
 #include <sys/socket.h>
 
 #define BACKLOG 3
+#define TRUE 1
+#define FALSE 0
 
 using namespace std;
 
-void usage(char* argv){
-    cout << "USAGE :" << argv <<" [port]"<<endl;
-    cout << "EXAMPLE :" << argv <<" 1234"<<endl;
+typedef struct param{
+    short echo = FALSE;
+    short broad_cast = FALSE;
+}param;
+
+void usage(){
+    cout << "USAGE : ./server <port>"<< " [-e[-b]]" <<endl;
+    cout << "EXAMPLE : ./server 1234"<< " -e -b"<<endl;
+    exit(1);
+}
+
+void param_parsing(int argc, char** argv, param* option){
+    if(argc == 3 && strcmp(argv[2], "-e") == 0){ //echo 옵션이 켜져있다면
+        option->echo = TRUE;
+    }
+    else if(argc == 4 && strcmp(argv[3], "-d") == 0 && strcmp(argv[2], "-e") == 0){ //broad cast 옵션까지 켜져있다면
+            option->broad_cast = TRUE;
+    }
+    else{
+        usage();
+    }
 }
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2){
-        usage(argv[0]);
+    param option;
+
+    if(argc < 2 || argc > 4){
+        usage();
         return -1;
+    }else if (argc >2){
+        param_parsing(argc, argv, &option);
     }
+
     char buf[256];
     struct sockaddr_in addr_server = {};
     struct sockaddr_in addr_client = {};
@@ -54,7 +79,7 @@ int main(int argc, char* argv[])
         close(sock_server);
         exit(1);
     }else{
-        printf("accept success.. Hello server to client\n");
+        printf("accept success.. Hello server to client sock_client : %d\n", sock_client);
     }
 
     while(1){
@@ -65,10 +90,19 @@ int main(int argc, char* argv[])
         }; 
         
         printf("%s\n", buf); //클라한테 받은내용 출력
+
+        //echo 모드가 켜져있다면
+        if(option.echo == TRUE){
+            if(write(sock_client, buf, strlen(buf)) == -1){ //client로 보내기
+                printf("write error");
+                break;
+            }
+        }
     }
 
     close(sock_client);
     close(sock_server);
 
     return 0;
+   
 }

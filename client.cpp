@@ -24,6 +24,7 @@ int main(int argc, char *argv[]){
     addr_server.sin_port = htons(atoi(argv[2]));
 
     char buf[256];
+    char get_buf[256];
 
     int sock_client = socket(AF_INET, SOCK_STREAM, 0); // 클라이언트 소켓 생성
     if(sock_client == -1){
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]){
    
     while(1){
         cin >> buf; // 버퍼에 문자열 입력
-        
+        memset(get_buf,0,256);
         if(strlen(buf)>255) {
             break;
         }
@@ -48,9 +49,14 @@ int main(int argc, char *argv[]){
         if(write(sock_client, buf, strlen(buf)) == -1){ //server로 보내기
             printf("write error");
             break;
-        
         }
         
+        if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
+            printf("read error");
+            break;
+        };
+
+        printf("receive from server : %s\n", get_buf);
     }
     close(sock_client); // 연결 종료
     return 0;
