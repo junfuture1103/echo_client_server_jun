@@ -152,6 +152,10 @@ int main(int argc, char* argv[])
                     //echo 모드가 켜져있다면
                     if(option.echo != FALSE){
                         if(option.broad_cast == TRUE){
+                            if(write(i, buf, read_check) == -1){ //client로 보내기
+                                printf("write error");
+                                break;
+                            }
                             for (j=4; j<fd_max+1; j++){
                                 if (j == i){
                                     continue;

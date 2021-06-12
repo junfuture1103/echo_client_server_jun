@@ -82,7 +82,6 @@ int main(int argc, char *argv[]){
             };
 
             printf("receive from server : %s\n", get_buf);
-            break;
         }
 
     }
