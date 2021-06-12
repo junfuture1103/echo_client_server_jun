@@ -80,6 +80,18 @@ int main(int argc, char* argv[])
         exit(1);
     }else{
         printf("accept success.. Hello server to client sock_client : %d\n", sock_client);
+        if(option.echo == TRUE){
+            if(write(sock_client, "echo", strlen("echo")) == -1){ //client로 보내기
+                    printf("write error");
+                    exit(1);
+            }
+        }
+        else{
+            if(write(sock_client, "none", strlen("none")) == -1){ //client로 보내기
+                    printf("write error");
+                    exit(1);
+            }
+        }
     }
 
     while(1){

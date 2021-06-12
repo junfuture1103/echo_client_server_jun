@@ -6,12 +6,17 @@
 #include <sys/socket.h>
 using namespace std;
 
+#define TRUE 1
+#define FALSE 0
+
 void usage(char *argv){
     cout << "Usage : " << argv << " [ip] [port]" << endl;
     cout << "Example) " << argv << " 127.0.0.1 1234" << endl;
 }
 
 int main(int argc, char *argv[]){
+    short echo = FALSE;
+
     if(argc != 3){
         usage(argv[0]);
         return -1;
@@ -38,7 +43,21 @@ int main(int argc, char *argv[]){
         close(sock_client);
         exit(1);
     }
-   
+    
+    memset(get_buf,0,256);
+    if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
+        printf("read error");
+        exit(1);
+    };
+    
+    if(strncmp(get_buf, "echo", strlen(get_buf)) == 0){
+        echo = TRUE;
+        printf("start echo mode..\n");
+    }
+    else{
+        printf("start normal mode..\n");
+    }
+
     while(1){
         cin >> buf; // 버퍼에 문자열 입력
         memset(get_buf,0,256);
@@ -51,12 +70,14 @@ int main(int argc, char *argv[]){
             break;
         }
         
-        if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
-            printf("read error");
-            break;
-        };
+        if (echo){
+            if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
+                printf("read error");
+                break;
+            };
 
-        printf("receive from server : %s\n", get_buf);
+            printf("receive from server : %s\n", get_buf);
+        }
     }
     close(sock_client); // 연결 종료
     return 0;
