@@ -24,6 +24,7 @@ int main(int argc, char *argv[]){
 
     struct sockaddr_in addr_server = {};
 
+    memset(&addr_server, 0, sizeof(addr_server));
     addr_server.sin_family = AF_INET; 
     addr_server.sin_addr.s_addr = inet_addr(argv[1]); 
     addr_server.sin_port = htons(atoi(argv[2]));
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]){
     char buf[256];
     char get_buf[256];
 
-    int sock_client = socket(AF_INET, SOCK_STREAM, 0); // 클라이언트 소켓 생성
+    int sock_client = socket(PF_INET, SOCK_STREAM, 0); // 클라이언트 소켓 생성
     if(sock_client == -1){
         printf("socket error");
         close(sock_client);
@@ -54,10 +55,14 @@ int main(int argc, char *argv[]){
         echo = TRUE;
         printf("start echo mode..\n");
     }
+    else if(strncmp(get_buf, "broad", strlen(get_buf)) == 0) {
+        echo = TRUE;
+        printf("start broad cast mode..\n");
+    }
     else{
         printf("start normal mode..\n");
     }
-
+    
     while(1){
         cin >> buf; // 버퍼에 문자열 입력
         memset(get_buf,0,256);
@@ -69,15 +74,17 @@ int main(int argc, char *argv[]){
             printf("write error");
             break;
         }
-        
+
         if (echo){
             if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
                 printf("read error");
-                break;
+                exit(1);
             };
 
             printf("receive from server : %s\n", get_buf);
+            break;
         }
+
     }
     close(sock_client); // 연결 종료
     return 0;
