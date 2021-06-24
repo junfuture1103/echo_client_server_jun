@@ -1,10 +1,11 @@
+#include <stdio.h>
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <thread>
 #include <sys/socket.h>
-#include <sys/select.h>
 
 #define BACKLOG 5
 #define TRUE 1
@@ -36,8 +37,26 @@ void param_parsing(int argc, char** argv, param* option){
     }
 }
 
-int main(int argc, char* argv[])
-{
+void* recv_client(int client_sd){
+    char buf[256];
+    while(1){
+        memset(buf, 0, 256); // 버퍼 초기화
+
+        if(read(client_sd, buf, sizeof(buf)-1) == -1){
+            printf("read error");
+        }; 
+        
+        printf("%s\n", buf); //클라한테 받은내용 출력
+
+        if(write(client_sd, buf, sizeof(buf)) == -1){ //client로 보내기
+            printf("write error");
+        }
+    }
+
+    close(client_sd);
+}
+
+int main(int argc, char* argv[]){
     param option;
 
     if(argc < 2 || argc > 4){
@@ -50,8 +69,8 @@ int main(int argc, char* argv[])
     char buf[256];
     struct sockaddr_in addr_server = {};
     struct sockaddr_in addr_client = {};
-    struct timeval timeout;
     socklen_t addr_client_len = sizeof(addr_client);
+    struct timeval timeout;
 
     int fd_max, fd_num, sock_server, sock_client, read_check, j;
     
@@ -81,101 +100,18 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    FD_ZERO(&reads);
-    FD_SET(sock_server, &reads);
-    fd_max = sock_server;
-
     while(1){
-        cpy_reads = reads;
-        timeout.tv_sec = 5;
-        timeout.tv_usec = 5000;
-
-        fd_num = select(fd_max+1, &cpy_reads, 0,0,&timeout);
-        if(fd_num == -1){
-            break;
+        sock_client = accept(sock_server, (sockaddr*) &addr_client, &addr_client_len); // 연결 수락 
+        if(sock_client == -1){
+            printf("accept error\n");
+            close(sock_server);
+            exit(1);
         }
-        if(fd_num == 0){
-            continue;
-        }
-        for (int i =0; i<fd_max+1; i++){
-            if (FD_ISSET(i, &cpy_reads)){
-                if (i == sock_server){
-                    sock_client = accept(sock_server, (sockaddr*) &addr_client, &addr_client_len); // 연결 수락
-                    if(sock_client == -1){
-                        printf("accept error\n");
-                        close(sock_server);
-                        exit(1);
-                    }
-                    FD_SET(sock_client, &reads);
-                    if(fd_max < sock_client){
-                        fd_max = sock_client;
-                    }
-                    printf("accept success.. Hello server to client sock_client : %d\n", sock_client);
-                    
-                    if(option.echo != FALSE){
-                        if(option.broad_cast == TRUE){
-                            if(write(sock_client, "broad", strlen("broad")) == -1){ //client로 보내기
-                                    printf("write error");
-                                    exit(1);
-                            }
-                        }else{
-                            if(write(sock_client, "echo", strlen("echo")) == -1){ //client로 보내기
-                            printf("write error");
-                            exit(1);
-                            }
-                        }
+        printf("accept success.. Hello server to client sock_client : %d\n", sock_client);
 
-                    }
-                    else{
-                        if(write(sock_client, "none", strlen("none")) == -1){ //client로 보내기
-                                printf("write error");
-                                exit(1);
-                        }
-                    }
-                    
-                }
-                else{
-                    memset(buf, 0, 256); // 버퍼 초기화
-                    read_check = read(i, buf, sizeof(buf)-1);
-                    if(read_check == -1){
-                        printf("read error");
-                        break;
-                    };
-                    if(read_check == 0){
-                        FD_CLR(i, &reads);
-                        close(i);
-                        printf("close client: %d \n", i);
-                    }
-                    
-                    printf("%s\n", buf); //클라한테 받은내용 출력
-                   
-                    //echo 모드가 켜져있다면
-                    if(option.echo != FALSE){
-                        if(option.broad_cast == TRUE){
-                            if(write(i, buf, read_check) == -1){ //client로 보내기
-                                printf("write error");
-                                break;
-                            }
-                            for (j=4; j<fd_max+1; j++){
-                                if (j == i){
-                                    continue;
-                                }
-                                if(write(j, buf, read_check) == -1){ //client로 보내기
-                                    printf("write error");
-                                    break;
-                                }
-                            }
-                        }else{
-                            if(write(i, buf, read_check) == -1){ //client로 보내기
-                                printf("write error");
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        thread *t1 = new thread(recv_client, sock_client);
 
+        t1->detach();
     }
 
     close(sock_client);

@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){
         close(sock_client);
         exit(1);
     }
-    
+    /*
     memset(get_buf,0,256);
     if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
         printf("read error");
@@ -62,27 +62,27 @@ int main(int argc, char *argv[]){
     else{
         printf("start normal mode..\n");
     }
-    
+    */
     while(1){
-        cin >> buf; // 버퍼에 문자열 입력
+        cin >> buf; // 버퍼에 문자열 입력 block function thread를 써야함.. std string 이용
         memset(get_buf,0,256);
         if(strlen(buf)>255) {
             break;
         }
 
         if(write(sock_client, buf, strlen(buf)) == -1){ //server로 보내기
-            printf("write error");
+            printf("write error\n");
             break;
         }
 
-        if (echo){
-            if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
-                printf("read error");
-                exit(1);
-            };
+        //if (echo){
+        if(read(sock_client, get_buf, sizeof(get_buf)-1) == -1){
+            printf("read error");
+            exit(1);
+        };
 
-            printf("receive from server : %s\n", get_buf);
-        }
+        printf("receive from server : %s\n", get_buf);
+        //}
 
     }
     close(sock_client); // 연결 종료
