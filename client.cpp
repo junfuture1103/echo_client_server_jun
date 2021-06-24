@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <thread>
+
 using namespace std;
 
 #define TRUE 1
@@ -14,8 +16,16 @@ void usage(char *argv){
     cout << "Example) " << argv << " 127.0.0.1 1234" << endl;
 }
 
-void Callback(void *data) {
-    string &s = *(static_cast<string*>(data));
+void* recv_server(int client_sd){
+    char get_buf[256];
+    memset(get_buf,0,sizeof(get_buf));
+    int recv_len;
+
+    while(recv_len = read(client_sd, get_buf, sizeof(get_buf)-1)){
+        printf("get by server : %s\n", get_buf);
+    };
+
+    close(client_sd);
 }
 
 int main(int argc, char *argv[]){
@@ -48,29 +58,14 @@ int main(int argc, char *argv[]){
         close(sock_client);
         exit(1);
     }
-    /*
-    memset(get_buf,0,256);
-    if(read(sock_client, get_buf, sizeof(buf)-1) == -1){
-        printf("read error");
-        exit(1);
-    };
-    
-    if(strncmp(get_buf, "echo", strlen(get_buf)) == 0){
-        echo = TRUE;
-        printf("start echo mode..\n");
-    }
-    else if(strncmp(get_buf, "broad", strlen(get_buf)) == 0) {
-        echo = TRUE;
-        printf("start broad cast mode..\n");
-    }
-    else{
-        printf("start normal mode..\n");
-    }
-    */
+
+    thread *t1 = new thread(recv_server, sock_client);
+    t1->detach();
+
     while(1){
+        buf.clear();
         getline(cin, buf); // 버퍼에 문자열 입력 block function thread를 써야함.. std string 이용
         int buf_size = buf.size();
-        memset(get_buf,0,sizeof(get_buf));
 
         if(buf_size>255) {
             break;
@@ -82,16 +77,6 @@ int main(int argc, char *argv[]){
             printf("write error\n");
             break;
         }
-
-        //if (echo){
-        if(read(sock_client, get_buf, sizeof(get_buf)-1) == -1){
-            printf("read error");
-            exit(1);
-        };
-
-        printf("receive from server : %s\n", get_buf);
-        //}
-
     }
     close(sock_client); // 연결 종료
     return 0;

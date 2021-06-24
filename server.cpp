@@ -28,7 +28,7 @@ void param_parsing(int argc, char** argv, param* option){
     if(argc == 3 && strcmp(argv[2], "-e") == 0){ //echo 옵션이 켜져있다면
         option->echo = TRUE;
     }
-    if(argc == 4 && (strcmp(argv[3], "-b") == 0) && (strcmp(argv[2], "-e") == 0)){ //broad cast 옵션까지 켜져있다면
+    else if(argc == 4 && (strcmp(argv[3], "-b") == 0) && (strcmp(argv[2], "-e") == 0)){ //broad cast 옵션까지 켜져있다면
         option->echo = TRUE;
         option->broad_cast = TRUE;
     }
@@ -37,18 +37,33 @@ void param_parsing(int argc, char** argv, param* option){
     }
 }
 
-void* recv_client(int client_sd){
+void* recv_client(int client_sd, param* option, int first_client, int* client_num){
     char buf[256];
+    char tmp[256];
     memset(buf,0,sizeof(buf));
     int recv_len;
 
-    while(recv_len = read(client_sd, buf, sizeof(buf))){
-        printf("get by client : %s\n", buf); //클라한테 받은내용 출력
-        //if(option->echo){
-            if(write(client_sd, buf, recv_len) == -1){ //client로 보내기
+    while(1){
+        memset(tmp,0,sizeof(buf));
+        recv_len = read(client_sd, buf, sizeof(buf));
+        strncpy(tmp, buf, recv_len);
+        printf("get by client : %s\n", tmp); //클라한테 받은내용 출력
+        printf("buf_size : %d\n", recv_len);
+        if(option->echo){
+            if(write(client_sd, tmp, recv_len) == -1){ //client로 보내기
                 printf("write error");
             } 
-        //}
+        }
+        printf("buf_size : %d", recv_len);
+        if(option->broad_cast){
+            for (int i = first_client; i<(*client_num)+1; i++){
+                if (i != client_sd){
+                    if(write(i, tmp, recv_len) == -1){ //client로 보내기
+                        printf("write error");
+                    } 
+                }
+            }
+        }
     }
 
     close(client_sd);
@@ -69,10 +84,8 @@ int main(int argc, char* argv[]){
     socklen_t addr_client_len = sizeof(addr_client);
     struct timeval timeout;
 
-    int fd_max, fd_num, sock_server, sock_client, read_check, j;
-    
-    //for select
-    fd_set reads, cpy_reads;
+    int sock_server, sock_client, read_check, client_num;
+    int first_sd = 0;
 
     addr_server.sin_family = AF_INET;
     addr_server.sin_port = htons(atoi(argv[1]));
@@ -106,8 +119,15 @@ int main(int argc, char* argv[]){
         }
         printf("accept success.. Hello server to client sock_client : %d\n", sock_client);
 
-        thread *t1 = new thread(recv_client, sock_client);
+        if(first_sd == 0){
+            first_sd = sock_client;
+        }
+
+        client_num = sock_client;
+
+        thread *t1 = new thread(recv_client, sock_client, &option, first_sd, &client_num);
         t1->detach();
+
     }
 
     close(sock_client);
