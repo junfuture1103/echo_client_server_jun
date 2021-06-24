@@ -14,6 +14,10 @@ void usage(char *argv){
     cout << "Example) " << argv << " 127.0.0.1 1234" << endl;
 }
 
+void Callback(void *data) {
+    string &s = *(static_cast<string*>(data));
+}
+
 int main(int argc, char *argv[]){
     short echo = FALSE;
 
@@ -29,7 +33,7 @@ int main(int argc, char *argv[]){
     addr_server.sin_addr.s_addr = inet_addr(argv[1]); 
     addr_server.sin_port = htons(atoi(argv[2]));
 
-    char buf[256];
+    string buf;
     char get_buf[256];
 
     int sock_client = socket(PF_INET, SOCK_STREAM, 0); // 클라이언트 소켓 생성
@@ -64,13 +68,17 @@ int main(int argc, char *argv[]){
     }
     */
     while(1){
-        cin >> buf; // 버퍼에 문자열 입력 block function thread를 써야함.. std string 이용
-        memset(get_buf,0,256);
-        if(strlen(buf)>255) {
+        getline(cin, buf); // 버퍼에 문자열 입력 block function thread를 써야함.. std string 이용
+        int buf_size = buf.size();
+        memset(get_buf,0,sizeof(get_buf));
+
+        if(buf_size>255) {
             break;
         }
+        printf("write : ");
+        cout<<buf<<endl;
 
-        if(write(sock_client, buf, strlen(buf)) == -1){ //server로 보내기
+        if(write(sock_client, buf.c_str(), buf_size) == -1){ //server로 보내기
             printf("write error\n");
             break;
         }

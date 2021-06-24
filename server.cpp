@@ -39,18 +39,16 @@ void param_parsing(int argc, char** argv, param* option){
 
 void* recv_client(int client_sd){
     char buf[256];
-    while(1){
-        memset(buf, 0, 256); // 버퍼 초기화
+    memset(buf,0,sizeof(buf));
+    int recv_len;
 
-        if(read(client_sd, buf, sizeof(buf)-1) == -1){
-            printf("read error");
-        }; 
-        
-        printf("%s\n", buf); //클라한테 받은내용 출력
-
-        if(write(client_sd, buf, sizeof(buf)) == -1){ //client로 보내기
-            printf("write error");
-        }
+    while(recv_len = read(client_sd, buf, sizeof(buf))){
+        printf("get by client : %s\n", buf); //클라한테 받은내용 출력
+        //if(option->echo){
+            if(write(client_sd, buf, recv_len) == -1){ //client로 보내기
+                printf("write error");
+            } 
+        //}
     }
 
     close(client_sd);
@@ -66,7 +64,6 @@ int main(int argc, char* argv[]){
         param_parsing(argc, argv, &option);
     }
 
-    char buf[256];
     struct sockaddr_in addr_server = {};
     struct sockaddr_in addr_client = {};
     socklen_t addr_client_len = sizeof(addr_client);
@@ -110,7 +107,6 @@ int main(int argc, char* argv[]){
         printf("accept success.. Hello server to client sock_client : %d\n", sock_client);
 
         thread *t1 = new thread(recv_client, sock_client);
-
         t1->detach();
     }
 
