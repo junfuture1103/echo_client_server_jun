@@ -17,15 +17,16 @@ void usage(char *argv){
 }
 
 void* recv_server(int client_sd){
-    char get_buf[256];
-    memset(get_buf,0,sizeof(get_buf));
+    char get_buf[256] = {0,};
     int recv_len;
 
     while(recv_len = read(client_sd, get_buf, sizeof(get_buf)-1)){
         printf("get by server : %s\n", get_buf);
+        memset(get_buf,0,sizeof(get_buf));
     };
 
     close(client_sd);
+    return NULL;
 }
 
 int main(int argc, char *argv[]){

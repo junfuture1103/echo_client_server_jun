@@ -38,23 +38,21 @@ void param_parsing(int argc, char** argv, param* option){
 }
 
 void* recv_client(int client_sd, param* option, int first_client, int* client_num){
-    char buf[256];
-    char tmp[256];
-    memset(buf,0,sizeof(buf));
+    char buf[256] = {0,};
+    char tmp[256] = {0,};
     int recv_len;
 
     while(1){
-        memset(tmp,0,sizeof(buf));
         recv_len = read(client_sd, buf, sizeof(buf));
         strncpy(tmp, buf, recv_len);
         printf("get by client : %s\n", tmp); //클라한테 받은내용 출력
-        printf("buf_size : %d\n", recv_len);
+        //printf("buf_size : %d\n", recv_len);
         if(option->echo){
             if(write(client_sd, tmp, recv_len) == -1){ //client로 보내기
                 printf("write error");
             } 
         }
-        printf("buf_size : %d", recv_len);
+        // printf("buf_size : %d\n", recv_len);
         if(option->broad_cast){
             for (int i = first_client; i<(*client_num)+1; i++){
                 if (i != client_sd){
